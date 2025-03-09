@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>学期管理</title>
+    <!-- 引入 jQuery -->
+    <script th:src="@{/js/jquery-3.7.1.min.js}" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const token = localStorage.getItem('token');
+
+            // 显示添加学期的表单
+            $("#addCategoryBtn").click(function () {
+                $("#addTermModal").show();
+                $("#modalOverlay").show();
+            });
+
+            // 隐藏添加学期的表单
+            $("#cancelAddBtn, #cancelEditBtn, #modalOverlay").click(function () {
+                $("#addTermModal").hide();
+                $("#editTermModal").hide();
+                $("#modalOverlay").hide();
+            });
+
+            // 提交添加学期的表单
+            $("#addTermForm").submit(function (event) {
+                event.preventDefault();
+                var termData = {
+                    termName: $("#termName").val(),
+                    startDate: $("#startDate").val(),
+                    endDate: $("#endDate").val()
+                };
+
+                $.ajax({
+                    url: "/addTerm",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(termData),
+                    beforeSend: function (request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function (response) {
+                        alert(response.message);
+                        $("#addTermModal").hide();
+                        $("#modalOverlay").hide();
+                        window.parent.loadPage('getTerms');
+                    },
+                    error: function (error) {
+                        console.error("添加学期时发生错误:", error);
+                        alert("添加学期失败");
+                    }
+                });
+            });
+
+            // 显示修改学期的表单，并填充数据
+            $(".update-button").click(function () {
+                var termId = $(this).data("id");
+                var termName = $(this).data("name");
+                var startDate = $(this).data("startdate");
+                var endDate = $(this).data("enddate");
+
+                $("#editTermId").val(termId);
+                $("#editTermName").val(termName);
+                $("#editStartDate").val(startDate);
+                $("#editEndDate").val(endDate);
+
+                $("#editTermModal").show();
+                $("#modalOverlay").show();
+            });
+
+            // 提交修改学期的表单
+            $("#editTermForm").submit(function (event) {
+                event.preventDefault();
+                var termData = {
+                    termId: $("#editTermId").val(),
+                    termName: $("#editTermName").val(),
+                    startDate: $("#editStartDate").val(),
+                    endDate: $("#editEndDate").val()
+                };
+                console.log(termData)
+                $.ajax({
+                    url: "/updateTerm",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(termData),
+                    beforeSend: function (request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function (response) {
+                        alert(response.message);
+                        $("#editTermModal").hide();
+                        $("#modalOverlay").hide();
+                        window.parent.loadPage('getTerms');
+                    },
+                    error: function (error) {
+                        console.error("修改学期时发生错误:", error);
+                        alert("修改学期失败");
+                    }
+                });
+            });
+
+            $(".delete-button").click(function () {
+                var termId = $(this).data("id");
+                $.ajax({
+                    url: "/delTerm",
+                    type: "DELETE",
+                    data: { id: termId },
+                    beforeSend: function (request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function (response) {
+                        if (response.code === 0) {
+                            alert("删除成功");
+                            window.parent.loadPage('getTerms');
+                        } else {
+                            alert("删除失败");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .modal label, .modal input, .modal select {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .modal input, .modal select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal button {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+<button id="addCategoryBtn" th:if="${session.user.role=='sadmin'}">添加学期</button>
+<h1>学期管理</h1>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>学期名称</th>
+        <th>开始时间</th>
+        <th>结束时间</th>
+        <th th:if="${session.user.role=='sadmin'}">操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="term : ${terms}">
+        <td th:text="${term.termId}"></td>
+        <td th:text="${term.termName}"></td>
+        <td th:text="${#dates.format(term.startDate, 'yyyy年MM月dd日')}"></td>
+        <td th:text="${#dates.format(term.endDate, 'yyyy年MM月dd日')}"></td>
+        <td>
+            <button type="button" class="delete-button" th:data-id="${term.termId}" th:if="${session.user.role=='sadmin'}">删除</button>
+            <button type="button" class="update-button"
+                    th:data-id="${term.termId}"
+                    th:data-name="${term.termName}"
+                    th:data-startdate="${#dates.format(term.startDate, 'yyyy-MM-dd')}"
+                    th:data-enddate="${#dates.format(term.endDate, 'yyyy-MM-dd')}"
+                    th:if="${session.user.role=='sadmin'}">修改</button>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<!-- 添加学期的表单 -->
+<div id="modalOverlay" class="modal-overlay"></div>
+<div id="addTermModal" class="modal">
+    <h2>添加学期</h2>
+    <form id="addTermForm">
+        <label for="termName">学期名称:</label>
+        <input type="text" id="termName" name="termName" required>
+        <br>
+        <label for="startDate">开始时间:</label>
+        <input type="date" id="startDate" name="startDate" required>
+        <br>
+        <label for="endDate">结束时间:</label>
+        <input type="date" id="endDate" name="endDate" required>
+        <br>
+        <button type="submit">提交</button>
+        <button type="button" id="cancelAddBtn">取消</button>
+    </form>
+</div>
+
+<!-- 修改学期的表单 -->
+<div id="editTermModal" class="modal">
+    <h2>修改学期</h2>
+    <form id="editTermForm">
+        <input type="hidden" id="editTermId">
+        <label for="editTermName">学期名称:</label>
+        <input type="text" id="editTermName" name="termName" required>
+        <br>
+        <label for="editStartDate">开始时间:</label>
+        <input type="date" id="editStartDate" name="startDate" required>
+        <br>
+        <label for="editEndDate">结束时间:</label>
+        <input type="date" id="editEndDate" name="endDate" required>
+        <br>
+        <button type="submit">提交</button>
+        <button type="button" id="cancelEditBtn">取消</button>
+    </form>
+</div>
+
+</body>
+</html>

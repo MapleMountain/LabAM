@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cg.mapper.SafetyChecksMapper">
+
+    <resultMap id="BaseResultMap" type="com.cg.pojo.SafetyChecks">
+            <id property="checkId" column="check_id" jdbcType="INTEGER"/>
+            <result property="termId" column="term_id" jdbcType="INTEGER"/>
+            <result property="labId" column="lab_id" jdbcType="INTEGER"/>
+            <result property="managerId" column="manager_id" jdbcType="INTEGER"/>
+            <result property="windowCheck" column="window_check" jdbcType="TINYINT"/>
+            <result property="electricalCheck" column="electrical_check" jdbcType="TINYINT"/>
+            <result property="fireSafetyCheck" column="fire_safety_check" jdbcType="TINYINT"/>
+            <result property="equipmentCheck" column="equipment_check" jdbcType="TINYINT"/>
+            <result property="itemsPlacementCheck" column="items_placement_check" jdbcType="TINYINT"/>
+            <result property="cleanlinessCheck" column="cleanliness_check" jdbcType="TINYINT"/>
+            <result property="otherHazards" column="other_hazards" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="OTHER"/>
+            <result property="reportTime" column="report_time" jdbcType="TIMESTAMP"/>
+            <result property="resolvedTime" column="resolved_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        check_id,term_id,lab_id,
+        manager_id,check_date,window_check,
+        electrical_check,fire_safety_check,equipment_check,
+        items_placement_check,cleanliness_check,other_hazards,
+        status,report_time,resolved_time
+    </sql>
+    <select id="getlist" resultType="com.cg.pojo.SafetyChecks">
+        SELECT
+            sc.*,
+            t.term_name AS termName,
+            l.lab_name AS labName,
+            u.username AS username
+        FROM
+            safety_checks sc
+                LEFT JOIN terms t ON sc.term_id = t.term_id
+                LEFT JOIN laboratories l ON sc.lab_id = l.lab_id
+                LEFT JOIN users u ON sc.manager_id = u.user_id
+        ORDER BY sc.report_time DESC;
+    </select>
+<!--    <resultMap id="SafetyChecksResultMap" type="com.cg.pojo.SafetyChecks">-->
+<!--        <id property="checkId" column="check_id"/>-->
+<!--        <result property="termId" column="term_id"/>-->
+<!--        <result property="labId" column="lab_id"/>-->
+<!--        <result property="managerId" column="manager_id"/>-->
+<!--        <result property="windowCheck" column="window_check"/>-->
+<!--        <result property="electricalCheck" column="electrical_check"/>-->
+<!--        <result property="fireSafetyCheck" column="fire_safety_check"/>-->
+<!--        <result property="equipmentCheck" column="equipment_check"/>-->
+<!--        <result property="itemsPlacementCheck" column="items_placement_check"/>-->
+<!--        <result property="cleanlinessCheck" column="cleanliness_check"/>-->
+<!--        <result property="otherHazards" column="other_hazards"/>-->
+<!--        <result property="status" column="status"/>-->
+<!--        <result property="reportTime" column="report_time"/>-->
+<!--        <result property="resolvedTime" column="resolved_time"/>-->
+<!--        &lt;!&ndash; 关联的额外字段 &ndash;&gt;-->
+<!--        <result property="termName" column="termName"/>-->
+<!--        <result property="labName" column="labName"/>-->
+<!--        <result property="username" column="username"/>-->
+<!--    </resultMap>-->
+</mapper>

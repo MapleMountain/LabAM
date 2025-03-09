@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cg.mapper.LaboratoriesMapper">
+
+    <resultMap id="BaseResultMap" type="com.cg.pojo.Laboratories">
+            <id property="labId" column="lab_id" jdbcType="INTEGER"/>
+            <result property="labName" column="lab_name" jdbcType="VARCHAR"/>
+            <result property="collegeId" column="college_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        lab_id,lab_name,college_id
+    </sql>
+    <select id="getLabList" resultType="com.cg.pojo.Laboratories">
+        SELECT l.*, c.college_name
+        FROM laboratories l
+    LEFT JOIN colleges c ON l.college_id = c.college_id
+
+    </select>
+
+</mapper>

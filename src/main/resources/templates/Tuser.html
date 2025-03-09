@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户列表</title>
+    <script th:src="@{/js/jquery-3.7.1.min.js}" src="httm/jquery-3.6.0.min.js"></script>
+    <link  rel="stylesheet" th:href="@{/css/post.css}" href="">
+
+    <script>
+        $(document).ready(function() {
+            const token = localStorage.getItem('token');
+
+
+            $('.delete-button').on('click', function() {
+                var userId = $(this).data('id');
+
+
+                if (confirm('确定要删除这个用户吗？')) {
+                    $.ajax({
+                        url: 'deleteUser',
+                        type: 'DELETE',
+                        data: {
+                            id: userId
+                        },
+                        beforeSend: function(request) {
+                            request.setRequestHeader("token", token);
+                        },
+                        success: function(response) {
+                            if (response.code === 0) {
+                                alert('删除成功');
+
+                                window.parent.loadPage("userList")
+                            } else {
+                                alert('删除失败: ' + response.message);
+                            }
+                        },
+                        error: function(error) {
+                            console.error('删除用户时发生错误:', error);
+                            alert('删除失败');
+                        }
+                    });
+                }
+            });
+            $('.authorize-button').on('click', function() {
+                var userId = $(this).data('id');
+
+                if (confirm('给予授权？')) {
+                    $.ajax({
+                        url: 'authorize',
+                        type: 'POST',
+                        data: {
+                            uid: userId
+                        },
+                        beforeSend: function(request) {
+                            request.setRequestHeader("token", token);
+                        },
+                        success: function(response) {
+                            if (response.code === 0) {
+                                alert(response.message);
+
+                                window.parent.loadPage("userList")
+                            } else {
+                                alert('删除失败: ' + response.message);
+                            }
+                        },
+                        error: function(error) {
+                            console.error('删除用户时发生错误:', error);
+                            alert('删除失败');
+                        }
+                    });
+                }
+            });
+            $('.unAuthorize-button').on('click', function() {
+                var userId = $(this).data('id');
+
+                if (confirm('取消授权？')) {
+                    $.ajax({
+                        url: 'unauthorize',
+                        type: 'POST',
+                        data: {
+                            uid: userId
+                        },
+                        beforeSend: function(request) {
+                            request.setRequestHeader("token", token);
+                        },
+                        success: function(response) {
+                            if (response.code === 0) {
+                                alert(response.message);
+                                window.parent.loadPage("userList")
+                            } else {
+                                alert('失败: ' + response.message);
+                            }
+                        },
+                        error: function(error) {
+                            console.error('删除用户时发生错误:', error);
+                            alert('删除失败');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
+</head>
+<body>
+<h1>用户列表</h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>用户名</th>
+        <th>权限</th>
+        <th>学院id</th>
+        <th>学院名</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="l : ${list}">
+        <td th:text="${l.userId}">ID</td>
+        <td th:text="${l.getUsername}">Username</td>
+        <td th:switch="${l.role}">
+            <span th:case="'common'">普通用户</span>
+            <span th:case="'sadmin'">超级管理员</span>
+            <span th:case="'ladmin'">实验室管理员</span>
+        </td>
+        <td th:text="${l.collegeId}">collegeId</td>
+        <td th:text="${l.collegeName}">collegeName</td>
+        <td>
+            <button type="button" class="delete-button" th:data-id="${l.userId}">删除</button>
+            <button type="button" class="authorize-button" th:data-id="${l.userId}" th:if="${l.role=='common'}">授权</button>
+            <button type="button" class="unAuthorize-button" th:data-id="${l.userId}" th:if="${l.role=='ladmin'}">撤销授权</button>
+            <a th:href="@{'/UserManager/' + ${l.userId}}" th:if="${l.role=='ladmin'}" class="btn-details">分配详情</a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+
+</html>

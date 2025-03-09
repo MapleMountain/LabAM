@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Safety Checks List</title>
+    <script th:src="@{/js/jquery-3.7.1.min.js}"></script>
+    <script th:src="@{/js/xlsx.full.min.js}" src="https://cdnjs.cloudflare.com/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        button {
+            padding: 5px 10px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Safety Checks List</h1>
+<button id="exportButton">导出Excel</button>
+<table>
+    <thead>
+    <tr>
+        <th>Check ID</th>
+        <th>学期</th>
+        <th>实验室</th>
+        <th>上报人</th>
+        <th>窗户</th>
+        <th>电线</th>
+        <th>消防栓</th>
+        <th>设备</th>
+        <th>物品摆放</th>
+        <th>卫生</th>
+        <th>其他问题</th>
+        <th>状态</th>
+        <th>上报时间</th>
+        <th>处理时间</th>
+        <th>处理</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="safetyCheck : ${list}">
+        <td th:text="${safetyCheck.checkId}"></td>
+        <td th:text="${safetyCheck.termName}">Term 1</td>
+        <td th:text="${safetyCheck.labName}">Lab 1</td>
+        <td th:text="${safetyCheck.username}">User 1</td>
+        <td th:switch="${safetyCheck.windowCheck}">
+            <span th:case="1" style="color: green;">正常</span>
+            <span th:case="0" style="color: red;">异常</span>
+        </td>
+        <td th:switch="${safetyCheck.electricalCheck}">
+            <span th:case="1" style="color: green;">正常</span>
+            <span th:case="0" style="color: red;">异常</span>
+        </td>
+        <td th:switch="${safetyCheck.fireSafetyCheck}">
+            <span th:case="1" style="color: green;">正常</span>
+            <span th:case="0" style="color: red;">异常</span>
+        </td>
+        <td th:switch="${safetyCheck.equipmentCheck}">
+            <span th:case="1" style="color: green;">正常</span>
+            <span th:case="0" style="color: red;">异常</span>
+        </td>
+        <td th:switch="${safetyCheck.itemsPlacementCheck}">
+            <span th:case="1" style="color: green;">正常</span>
+            <span th:case="0" style="color: red;">异常</span>
+        </td>
+        <td th:switch="${safetyCheck.cleanlinessCheck}">
+            <span th:case="1" style="color: green;">正常</span>
+            <span th:case="0" style="color: red;">异常</span>
+        </td>
+        <td th:text="${safetyCheck.otherHazards}">None</td>
+        <td th:switch="${safetyCheck.status}">
+            <span th:if="${safetyCheck.status == 'anomaly'}" style="color: red;">异常</span>
+            <span th:if="${safetyCheck.status == 'resolved'}" style="color: green;">已处理</span>
+            <span th:if="${safetyCheck.status == 'ok'}" style="color: blue;">正常</span>
+        </td>
+        <td th:text="${#dates.format(safetyCheck.reportTime, 'yyyy-MM-dd HH:mm:ss')}">2023-01-01 12:00:00</td>
+        <td th:text="${#dates.format(safetyCheck.resolvedTime, 'yyyy-MM-dd HH:mm:ss')}">2023-01-02 12:00:00</td>
+        <td>
+            <button type="button" class="change-status-button" th:disabled="${safetyCheck.status == 'resolved'||safetyCheck.status=='ok'}" th:data-id="${safetyCheck.checkId}" >处理</button>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function() {
+        const token = localStorage.getItem('token');
+
+        $('.change-status-button').on('click', function() {
+            const checkId = $(this).data('id');
+            if (confirm('Are you sure you want to mark this safety check as resolved?')) {
+                $.ajax({
+                    url: '/resolved',
+                    type: 'PATCH',
+                    data: {
+                        checkId: checkId
+                    },
+                    beforeSend: function(request) {
+                        request.setRequestHeader("token" ,token); // Include token if needed
+                    },
+                    success: function(response) {
+                        if (response.code === 0) {
+                            alert('Safety check marked as resolved successfully');
+                            window.parent.loadPage('safetyList')
+                        } else {
+                            alert('Failed to mark safety check as resolved: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error resolving safety check:', error);
+                        alert('Failed to mark safety check as resolved');
+                    }
+                });
+            }
+        });
+
+        $('#exportButton').on('click', function() {
+            var wb = XLSX.utils.book_new();
+            var ws = XLSX.utils.table_to_sheet(document.querySelector('table'));
+            XLSX.utils.book_append_sheet(wb, ws, 'Safety Checks');
+            XLSX.writeFile(wb, 'Safety_Checks.xlsx');
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script th:src="@{/js/jquery-3.7.1.min.js}"></script>
+    <title>添加安全检查报告</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        form {
+            max-width: 600px;
+            margin: auto;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+<h1>添加安全检查报告</h1>
+<form id="addReportForm">
+    <label for="termId">学期</label>
+    <select id="termId" name="termId" required>
+        <option value="">请选择学期</option>
+    </select>
+
+    <label for="labId">实验室</label>
+    <select id="labId" name="labId" required>
+        <option value="">请选择实验室</option>
+    </select>
+
+    <label for="windowCheck">窗户检查</label>
+    <select id="windowCheck" name="windowCheck" required>
+        <option value="">请选择状态</option>
+        <option value="1">正常</option>
+        <option value="0">异常</option>
+    </select>
+
+    <label for="electricalCheck">电气检查</label>
+    <select id="electricalCheck" name="electricalCheck" required>
+        <option value="">请选择状态</option>
+        <option value="1">正常</option>
+        <option value="0">异常</option>
+    </select>
+
+    <label for="fireSafetyCheck">消防安全检查</label>
+    <select id="fireSafetyCheck" name="fireSafetyCheck" required>
+        <option value="">请选择状态</option>
+        <option value="1">正常</option>
+        <option value="0">异常</option>
+    </select>
+
+    <label for="equipmentCheck">设备检查</label>
+    <select id="equipmentCheck" name="equipmentCheck" required>
+        <option value="">请选择状态</option>
+        <option value="1">正常</option>
+        <option value="0">异常</option>
+    </select>
+
+    <label for="itemsPlacementCheck">物品放置检查</label>
+    <select id="itemsPlacementCheck" name="itemsPlacementCheck" required>
+        <option value="">请选择状态</option>
+        <option value="1">正常</option>
+        <option value="0">异常</option>
+    </select>
+
+    <label for="cleanlinessCheck">清洁度检查</label>
+    <select id="cleanlinessCheck" name="cleanlinessCheck" required>
+        <option value="">请选择状态</option>
+        <option value="1">正常</option>
+        <option value="0">异常</option>
+    </select>
+
+    <label for="otherHazards">其他隐患</label>
+    <textarea id="otherHazards" name="otherHazards"></textarea>
+
+    <button type="submit">提交</button>
+</form>
+
+<script>
+    $(document).ready(function() {
+        const token = localStorage.getItem('token');
+        // 获取学期列表
+        $.ajax({
+            type: 'GET',
+            url: '/getTermsList',
+            beforeSend: function(request) {
+                request.setRequestHeader("token", token);
+            },
+            success: function(response) {
+                if (response.code === 0) {
+                    var terms = response.data;
+                    var termSelect = $('#termId');
+                    terms.forEach(function(term) {
+                        termSelect.append(new Option(term.termName, term.termId));
+                    });
+                } else {
+                    alert('Failed to load terms list: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred: ' + error);
+            }
+        });
+
+        // 获取实验室列表
+        $.ajax({
+            type: 'GET',
+            url: '/getManagers',
+            beforeSend: function(request) {
+                request.setRequestHeader("token", token);
+            },
+            success: function(response) {
+                if (response.code === 0) {
+                    var labs = response.data;
+                    var labSelect = $('#labId');
+                    labs.forEach(function(lab) {
+                        labSelect.append(new Option(lab.labName, lab.labId));
+                    });
+                } else {
+                    alert('Failed to load lab list: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred: ' + error);
+            }
+        });
+
+        // 提交表单
+        $('#addReportForm').on('submit', function(event) {
+            event.preventDefault();
+            var formData = $(this).serializeArray();
+            var data = {};
+            formData.forEach(function(item) {
+                data[item.name] = item.value;
+            });
+
+            $.ajax({
+                url: '/addReport',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                beforeSend: function(request) {
+                    request.setRequestHeader("token", token);
+                },
+                success: function(response) {
+                    if (response.code === 0) {
+                        alert('报告添加成功');
+                        // 重置表单
+                        $('#addReportForm')[0].reset();
+                    } else {
+                        alert('Failed to add report: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Error adding report');
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

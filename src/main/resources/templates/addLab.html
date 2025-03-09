@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>实验室管理</title>
+    <!-- 引入 jQuery -->
+    <script th:src="@{/js/jquery-3.7.1.min.js}" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const token = localStorage.getItem('token');
+            $.ajax({
+                type: 'GET',
+                url: '/getCollegeList',
+                success: function(response) {
+                    if (response.code === 0) {
+                        var colleges = response.data;
+                        var collegeSelect = $('#collegeSelect');
+                        var editCollegeId = $('#editCollegeId');
+                        colleges.forEach(function(college) {
+                            collegeSelect.append(new Option(college.collegeName, college.collegeId));
+                            editCollegeId.append(new Option(college.collegeName, college.collegeId));
+                        });
+                    } else {
+                        alert('Failed to load categories: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('An error occurred: ' + error);
+                }
+            });
+
+            // 获取实验室列表并渲染表格
+            function loadLabs() {
+                $.ajax({
+                    url: "/getLabList",
+                    type: "GET",
+                    beforeSend: function (request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function (response) {
+                        if (response.code === 0) {
+                            var labs = response.data;
+                            var tbody = $("#LabTableBody");
+                            tbody.empty();
+                            labs.forEach(function (lab) {
+                                tbody.append(
+                                    '<tr>' +
+                                    '<td>' + lab.labId + '</td>' +
+                                    '<td>' + lab.labName + '</td>' +
+                                    '<td>' + lab.status + '</td>' +
+                                    '<td>' + lab.collegeId + '</td>' +
+                                    '<td>' + lab.collegeName + '</td>' +
+                                    '<td>' +
+                                    '<button type="button" class="delete-button" data-id="' + lab.labId + '">删除</button>' +
+                                    '<button type="button" class="update-button" data-id="' + lab.labId + '" data-name="' + lab.labName + '" data-collegeid="' + lab.collegeId + '">修改</button>' +
+                                    '</td>' +
+                                    '</tr>'
+                                );
+                            });
+
+                            // 删除实验室
+                            $(".delete-button").click(function () {
+                                var labId = $(this).data("id");
+                                $.ajax({
+                                    url: "/deleteLab",
+                                    type: "DELETE",
+                                    data: { id: labId },
+                                    beforeSend: function (request) {
+                                        request.setRequestHeader("token", token);
+                                    },
+                                    success: function (response) {
+                                        if (response.code === 0) {
+                                            alert("删除成功");
+                                            loadLabs();  // 重新加载实验室列表
+                                        } else {
+                                            alert(response.message);
+                                        }
+                                    },
+                                    error: function (error) {
+                                        console.error("删除实验室时发生错误:", error);
+                                        alert("删除实验室失败");
+                                    }
+                                });
+                            });
+
+                            // 显示修改实验室的表单，并填充数据
+                            $(".update-button").click(function () {
+                                var labId = $(this).data("id");
+                                var labName = $(this).data("name");
+                                var collegeId = $(this).data("collegeid");
+
+                                $("#editLabId").val(labId);
+                                $("#editLabName").val(labName);
+                                $("#editCollegeId").val(collegeId);
+
+                                $("#editLabModal").show();
+                                $("#modalOverlay").show();
+                            });
+                        } else {
+                            alert("获取实验室列表失败");
+                        }
+                    },
+                    error: function (error) {
+                        console.error("获取实验室列表时发生错误:", error);
+                        alert("获取实验室列表失败");
+                    }
+                });
+            }
+
+            loadLabs();  // 初始加载实验室列表
+
+            // 显示添加实验室的表单
+            $("#addLabBtn").click(function () {
+                $("#addLabModal").show();
+                $("#modalOverlay").show();
+            });
+
+            // 隐藏表单
+            $("#cancelAddBtn, #cancelEditBtn, #modalOverlay").click(function () {
+                $("#addLabModal").hide();
+                $("#editLabModal").hide();
+                $("#modalOverlay").hide();
+            });
+
+            // 提交添加实验室的表单
+            $("#addLabForm").submit(function (event) {
+                event.preventDefault();
+                var labData = {
+                    labName: $("#labName").val(),
+                    collegeId: $("#collegeSelect").val()
+                };
+
+                $.ajax({
+                    url: "/addLabs",
+                    type: "POST",
+                    data: labData,
+                    beforeSend: function (request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function (response) {
+                        alert(response.message);
+                        $("#addLabModal").hide();
+                        $("#modalOverlay").hide();
+                        loadLabs();  // 重新加载实验室列表
+                    },
+                    error: function (error) {
+                        console.error("添加实验室时发生错误:", error);
+                        alert("添加实验室失败");
+                    }
+                });
+            });
+
+            // 提交修改实验室的表单
+            $("#editLabForm").submit(function (event) {
+                event.preventDefault();
+                var labData = {
+                    id: $("#editLabId").val(),
+                    labName: $("#editLabName").val(),
+                    collegeId: $("#editCollegeId").val()
+                };
+
+                $.ajax({
+                    url: "/updateLab",
+                    type: "PUT",
+                    data: labData,
+                    beforeSend: function (request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function (response) {
+                        alert(response.message);
+                        $("#editLabModal").hide();
+                        $("#modalOverlay").hide();
+                        loadLabs();  // 重新加载实验室列表
+                    },
+                    error: function (error) {
+                        console.error("修改实验室时发生错误:", error);
+                        alert("修改实验室失败");
+                    }
+                });
+            });
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius:
+                    5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+        }
+
+        .modal label, .modal input, .modal select {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .modal input, .modal select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal button {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+<button id="addLabBtn">添加实验室</button>
+<h1>实验室列表</h1>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>实验室名称</th>
+        <th>状态</th>
+        <th>学院ID</th>
+        <th>学院名称</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody id="LabTableBody">
+    <!-- 分类数据将通过JavaScript动态插入 -->
+    </tbody>
+</table>
+
+<!-- 添加实验室的表单 -->
+<div id="modalOverlay" class="modal-overlay"></div>
+<div id="addLabModal" class="modal">
+    <h2>添加实验室</h2>
+    <form id="addLabForm">
+        <label for="labName">实验室名称:</label>
+        <input type="text" id="labName" name="labName" required>
+        <label for="collegeSelect">选择学院:</label>
+        <select id="collegeSelect" name="collegeId" required>
+            <option value="">选择学院</option>
+        </select>
+        <button type="submit">提交</button>
+        <button type="button" id="cancelAddBtn">取消</button>
+    </form>
+</div>
+
+<!-- 修改实验室的表单 -->
+<div id="editLabModal" class="modal">
+    <h2>修改实验室</h2>
+    <form id="editLabForm">
+        <input type="hidden" id="editLabId">
+        <label for="editLabName">实验室名称:</label>
+        <input type="text" id="editLabName" name="labName" required>
+        <label for="editCollegeId">选择学院:</label>
+        <select id="editCollegeId" name="collegeId" required>
+            <option value="">选择学院</option>
+        </select>
+        <button type="submit">提交</button>
+        <button type="button" id="cancelEditBtn">取消</button>
+    </form>
+</div>
+</body>
+</html>

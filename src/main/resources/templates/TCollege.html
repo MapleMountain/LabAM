@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>College Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .modal label, .modal input, .modal select {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .modal input, .modal select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal button {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+    <script th:src="@{/js/jquery-3.7.1.min.js}" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<h1>学院管理</h1>
+<button id="addButton">添加学院</button>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>名称</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody id="collegeList">
+    </tbody>
+</table>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle"></h2>
+        <input type="hidden" id="collegeId">
+        <input type="text" id="collegeName" placeholder="输入学院名称">
+        <button id="saveButton">保存</button>
+        <button id="cancelButton">取消</button>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        const token = localStorage.getItem('token');
+
+        // Load college list
+        function loadCollegeList() {
+            $.ajax({
+                url: 'getCollegeList',
+                type: 'GET',
+                beforeSend: function(request) {
+                    request.setRequestHeader("token", token);
+                },
+                success: function(response) {
+                    if (response.code === 0) {
+                        const list = response.data;
+                        $('#collegeList').empty();
+                        list.forEach(college => {
+                            $('#collegeList').append(`
+                                    <tr>
+                                        <td>${college.collegeId}</td>
+                                        <td>${college.collegeName}</td>
+                                        <td>
+                                            <button onclick="showUpdateModal(${college.collegeId}, '${college.collegeName}')">更新</button>
+                                            <button onclick="deleteCollege(${college.collegeId})">删除</button>
+                                        </td>
+                                    </tr>
+                                `);
+                        });
+                    }
+                }
+            });
+        }
+
+        // Show modal for adding/updating college
+        function showModal(title) {
+            $('#modalTitle').text(title);
+            $('#modal').show();
+        }
+
+        // Hide modal
+        function hideModal() {
+            $('#collegeId').val('');
+            $('#collegeName').val('');
+            $('#modal').hide();
+        }
+
+        // Add new college
+        $('#addButton').click(function() {
+            $('#collegeId').val('');
+            $('#collegeName').val('');
+            showModal('Add College');
+        });
+
+        // Save college (add or update)
+        $('#saveButton').click(function() {
+            const id = $('#collegeId').val();
+            const name = $('#collegeName').val();
+
+            if (!name) {
+                alert('Please enter a college name');
+                return;
+            }
+
+            if (id) {
+                $.ajax({
+                    url: 'update',
+                    type: 'POST',
+                    data: { id: id, name: name },
+                    beforeSend: function(request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function(response) {
+                        if (response.code === 0) {
+                            alert('College updated successfully');
+                            loadCollegeList();
+                            hideModal();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            } else {
+                $.ajax({
+                    url: 'addCollege',
+                    type: 'POST',
+                    data: { name: name },
+                    beforeSend: function(request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function(response) {
+                        if (response.code === 0) {
+                            alert('College added successfully');
+                            loadCollegeList();
+                            hideModal();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Cancel button to hide modal
+        $('#cancelButton').click(function() {
+            hideModal();
+        });
+
+        // Show update modal
+        window.showUpdateModal = function(id, name) {
+            $('#collegeId').val(id);
+            $('#collegeName').val(name);
+            showModal('Update College');
+        }
+
+        // Delete college
+        window.deleteCollege = function(id) {
+            if (confirm('Are you sure you want to delete this college?')) {
+                $.ajax({
+                    url: 'deleteCollege',
+                    type: 'DELETE',
+                    data: { id: id },
+                    beforeSend: function(request) {
+                        request.setRequestHeader("token", token);
+                    },
+                    success: function(response) {
+                        if (response.code === 0) {
+                            alert('College deleted successfully');
+                            loadCollegeList();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Load the initial college list
+        loadCollegeList();
+    });
+</script>
+</body>
+</html>

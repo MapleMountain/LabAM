@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验室辅助管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: #4a90e2;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h2 {
+            margin: 0;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        .sidebar {
+            background-color: #34495e;
+            color: #ecf0f1;
+            width: 220px;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar a {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #3b5998;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 10px;
+        }
+
+        .main {
+            flex-grow: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .submenu {
+            display: none;
+            padding-left: 20px;
+        }
+
+        .submenu li {
+            margin-bottom: 5px;
+        }
+
+        .submenu a {
+            display: block;
+        }
+
+        .logout-link {
+            padding: 8px 16px;
+            background-color: #e74c3c;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .logout-link:hover {
+            background-color: #c0392b;
+        }
+
+        @media only screen and (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>实验室辅助管理系统</h2>
+        <h2 th:text="用户名+':'+${session.user.getUsername()}"></h2>
+        <span class="logout-link" onclick="logout()">退出</span>
+    </div>
+    <div class="content">
+        <div class="sidebar">
+            <h2>LabAM</h2>
+            <ul>
+                <li>
+                    <a href="#" onclick="toggleSubMenu('submenu1')">用户管理</a>
+                    <ul class="submenu" id="submenu1">
+                        <li><a href="#" onclick="loadPage('/userList')">用户列表</a></li>
+                        <!--            <li><a href="#" onclick="loadPage('/user/adduser')">用户新增</a></li>-->
+                    </ul>
+                </li>
+                <li>
+                <li><a href="#" onclick="loadPage('/ToTCollege')">学院管理</a></li>
+                <li><a href="#" onclick="loadPage('/getTerms')">学期管理</a></li>
+                <li>
+                    <a href="#" onclick="toggleSubMenu('submenu2')">实验室管理</a>
+                    <ul class="submenu" id="submenu2">
+                        <li><a href="#" onclick="loadPage('/insertLab')">实验室列表</a></li>
+                        <li th:if="${session.user.role=='ladmin'}"><a href="#" onclick="loadPage('/getLabsforManager')">查看我的实验室</a></li>
+                        <li><a href="#" onclick="loadPage('/safetyList')">安全日志</a></li>
+                        <li><a href="#" onclick="loadPage('/Report')">提交安全日志</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="main">
+            <iframe id="pageFrame" onclick="loadPage('/Report')" frameborder="0" width="100%" height="100%"></iframe>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/auth.js}"></script>
+<script th:src="@{/js/jquery-3.7.1.min.js}" src="/statics/js/jquery-3.6.0.min.js"></script>
+<script>
+    function toggleSubMenu(submenuId) {
+        const submenu = document.getElementById(submenuId);
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        // 如果没有token，重定向到登录页面
+        window.location.href = '/login';
+    }
+
+    function loadPage(url) {
+        $.ajax({
+            url: url,
+            type: "GET",
+            beforeSend: function(request) {
+                request.setRequestHeader("token", token);
+            },
+            success: function(response) {
+                var pageFrame = document.getElementById("pageFrame");
+                pageFrame.contentWindow.document.open();
+                pageFrame.contentWindow.document.write(response);
+                pageFrame.contentWindow.document.close();
+            },
+            error: function(xhr, status, error) {
+                console.log("Error loading page:", error);
+            }
+        });
+    }
+
+    function logout() {
+        $.ajax({
+            url: '/logout',
+            type: 'GET',
+            beforeSend: function(request) {
+                request.setRequestHeader("token", token);
+            },
+            success: function() {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+            },
+            error: function(xhr, status, error) {
+                console.log("Error during logout:", error);
+            }
+        });
+    }
+    window.loadPage=loadPage;
+</script>
+
+</body>
+</html>

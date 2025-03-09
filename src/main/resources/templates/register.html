@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            box-sizing: border-box;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #5cb85c;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+    </style>
+    <script th:src="@{/js/jquery-3.7.1.min.js}" src="ht6.0.min.js"></script>
+</head>
+<body>
+<h2>User Registration</h2>
+<form id="registrationForm">
+    <label for="username">Username:</label><br>
+    <input type="text" id="username" name="username" required><br>
+
+    <label for="password">Password:</label><br>
+    <input type="password" id="password" name="password" required><br>
+
+    <label for="collegeSelect">分类:</label><br>
+    <select id="collegeSelect" name="collegeId" required>
+        <option value="">选择学院</option>
+    </select><br>
+    <button type="submit">Register</button>
+</form>
+
+<script>
+    $(document).ready(function(){
+         // const token = localStorage.getItem('token');
+        $.ajax({
+            type: 'GET',
+            url: '/getCollegeList',
+            success: function(response) {
+                if (response.code === 0) {
+                    var colleges = response.data;
+                    var collegeSelect = $('#collegeSelect');
+                    colleges.forEach(function(college) {
+                        collegeSelect.append(new Option(college.collegeName, college.collegeId));
+                    });
+                } else {
+                    alert('Failed to load categories: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred: ' + error);
+            }
+        });
+        $('#registrationForm').submit(function(e){
+            e.preventDefault(); // Prevent default form submission
+            var cid =$('#collegeSelect').val()
+            var formData = {
+                username: $('#username').val(),
+                password: $('#password').val(),
+                collegeId: parseInt(cid)
+            };
+
+
+            // AJAX POST request
+            $.ajax({
+                type: 'POST',
+                url: '/doRegiste',
+                data: JSON.stringify(formData), // contentType: 'application/json',
+                contentType: 'application/json',
+                success: function(response) {
+                    if (response.code === 0) {
+                        alert(response.message);
+                        window.location.href= '/login'; // Redirect to login page
+                        // Optionally redirect or do something else upon successful registration
+                    }else {
+                        alert(response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+
+                    alert('Registration failed: ' + error);
+                    // Optionally handle errors
+                }
+            });
+        });
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cg.mapper.TermsMapper">
+
+    <resultMap id="BaseResultMap" type="com.cg.pojo.Terms">
+            <id property="termId" column="term_id" jdbcType="INTEGER"/>
+            <result property="termName" column="term_name" jdbcType="VARCHAR"/>
+            <result property="startDate" column="start_date" jdbcType="DATE"/>
+            <result property="endDate" column="end_date" jdbcType="DATE"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        term_id,term_name,start_date,
+        end_date
+    </sql>
+</mapper>
